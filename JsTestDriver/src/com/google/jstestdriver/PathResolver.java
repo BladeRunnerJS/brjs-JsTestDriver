@@ -16,11 +16,14 @@
 package com.google.jstestdriver;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import org.apache.oro.io.GlobFilenameFilter;
@@ -157,9 +160,11 @@ public class PathResolver {
   }
 
   private String[] expandGlob(String filePath, String fileNamePattern, File dir) {
-    String[] filteredFiles = dir.list(new GlobFilenameFilter(
-        fileNamePattern, GlobCompiler.DEFAULT_MASK | GlobCompiler.CASE_INSENSITIVE_MASK));
-
+    boolean recurse = (fileNamePattern.matches("\\*\\*.*")) ? true : false;
+    FilenameFilter fileFilter = new GlobFilenameFilter(fileNamePattern,
+        GlobCompiler.DEFAULT_MASK | GlobCompiler.CASE_INSENSITIVE_MASK);
+    String[] filteredFiles = getFiles(dir, fileFilter, recurse, "").toArray(new String[0]);
+    
     if (filteredFiles == null || filteredFiles.length == 0) {
       try {
         String error = "The patterns/paths "
@@ -178,6 +183,25 @@ public class PathResolver {
     return filteredFiles;
   }
 
+  public Collection<String> getFiles(File directory, FilenameFilter filter, boolean recurse, String basePath) {
+    Vector<String> files = new Vector<String>();
+    File[] entries = directory.listFiles();
+    
+    if(entries != null) {
+      for(File entry : entries) {
+        if(filter == null || filter.accept(directory, entry.getName())) {
+          files.add(basePath + entry.getName());
+        }
+        else if(recurse && entry.isDirectory()) {
+          String entryBasePath = (basePath.equals("")) ? entry.getName() + "/" : basePath + entry.getName() + "/";
+          files.addAll(getFiles(entry, filter, recurse, entryBasePath));
+        }
+      }
+    }
+    
+    return files;    
+  }
+  
   public List<Plugin> resolve(List<Plugin> plugins) {
     List<UnreadableFile> unreadable = Lists.newLinkedList();
     List<Plugin> resolved = Lists.newLinkedList();

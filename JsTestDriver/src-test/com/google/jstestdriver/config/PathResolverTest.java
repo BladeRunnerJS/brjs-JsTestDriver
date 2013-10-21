@@ -102,6 +102,44 @@ public class PathResolverTest extends TestCase {
     assertTrue(listFiles.get(1).getFilePath().replace(File.separatorChar, '/').endsWith("test/test.js"));
     assertTrue(listFiles.get(2).getFilePath().replace(File.separatorChar, '/').endsWith("test/test3.js"));
   }
+  
+  public void testParseConfigFileAndHaveListOfRecursiveFiles() throws Exception {
+    createTmpSubDir("code");
+    createTmpSubDir("code/dir1");
+    File codeDir2 = createTmpSubDir("code/dir1/dir2");
+    createTmpSubDir("test");
+    createTmpSubDir("test/dir1");
+    File testDir2 = createTmpSubDir("test/dir1/dir2");
+    createTmpFile(codeDir2, "code.js");
+    createTmpFile(codeDir2, "code2.js");
+    createTmpFile(testDir2, "test.js");
+    createTmpFile(testDir2, "test2.js");
+    createTmpFile(testDir2, "test3.js");
+    
+    String configFile =
+        "load:\n" +
+      " - code/**.js\n" +
+      " - test/**.js\n" +
+      "exclude:\n" +
+      " - code/dir1/dir2/code2.js\n" +
+      " - test/dir1/dir2/test2.js";
+    ByteArrayInputStream bais = new ByteArrayInputStream(configFile.getBytes());
+    ConfigurationParser parser = new YamlParser();
+    
+    Configuration config =
+        parser.parse(new InputStreamReader(bais), null).resolvePaths(
+            new PathResolver(tmpDir, Collections.<FileParsePostProcessor>emptySet(),
+                new DisplayPathSanitizer(tmpDir)), createFlags());
+    
+    Set<FileInfo> files = config.getFilesList();
+    List<FileInfo> listFiles = new ArrayList<FileInfo>(files);
+    
+    assertEquals(3, files.size());
+    assertTrue(listFiles.get(0).getFilePath().replace(File.separatorChar, '/').endsWith("code/dir1/dir2/code.js"));
+    assertTrue(listFiles.get(1).getFilePath().replace(File.separatorChar, '/').endsWith("test/dir1/dir2/test.js"));
+    assertTrue(listFiles.get(2).getFilePath().replace(File.separatorChar, '/').endsWith("test/dir1/dir2/test3.js"));
+  }
+  
   public void testParseConfigFileAndHaveListOfFilesRelative() throws Exception {
     File codeDir = createTmpSubDir("code");
     File testDir = createTmpSubDir("test");
@@ -222,6 +260,35 @@ public class PathResolverTest extends TestCase {
     assertTrue(listFiles.get(1).getFilePath().replace(File.separatorChar, '/').endsWith("code/code2.js"));
   }
 
+  public void testRecursiveGlobIsExpanded() throws Exception {
+    File codeDir = createTmpSubDir("code");
+    createTmpSubDir("code/dir0");
+    File codeDir1 = createTmpSubDir("code/dir1");
+    File codeDir2 = createTmpSubDir("code/dir1/dir2");
+    createTmpSubDir("code/dirX");
+    createTmpFile(codeDir, "code.js");
+    createTmpFile(codeDir, "code2.js");
+    createTmpFile(codeDir1, "codeX.js");
+    createTmpFile(codeDir1, "codeY.js");
+    createTmpFile(codeDir2, "codeZ.js");
+    
+    String configFile = "load:\n - code/**.js";
+    ByteArrayInputStream bais = new ByteArrayInputStream(configFile.getBytes());
+    ConfigurationParser parser = new YamlParser();
+    
+    Configuration config = parser.parse(new InputStreamReader(bais), null).resolvePaths(
+        new PathResolver(tmpDir, Collections.<FileParsePostProcessor> emptySet(), new DisplayPathSanitizer(tmpDir)), createFlags());
+    Set<FileInfo> files = config.getFilesList();
+    List<FileInfo> listFiles = new ArrayList<FileInfo>(files);
+    
+    assertEquals(5, files.size());
+    assertTrue(listFiles.get(0).getFilePath().replace(File.separatorChar, '/').endsWith("code/code.js"));
+    assertTrue(listFiles.get(1).getFilePath().replace(File.separatorChar, '/').endsWith("code/code2.js"));
+    assertTrue(listFiles.get(2).getFilePath().replace(File.separatorChar, '/').endsWith("code/dir1/codeX.js"));
+    assertTrue(listFiles.get(3).getFilePath().replace(File.separatorChar, '/').endsWith("code/dir1/codeY.js"));
+    assertTrue(listFiles.get(4).getFilePath().replace(File.separatorChar, '/').endsWith("code/dir1/dir2/codeZ.js"));
+  }
+  
   public void testParseConfigFileAndHaveListOfFilesWithPatches()
       throws Exception {
     File codeDir = createTmpSubDir("code");
