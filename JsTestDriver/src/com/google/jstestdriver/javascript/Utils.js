@@ -211,7 +211,7 @@ jstestdriver.utils.serializeObjectToArray =
 
 
 jstestdriver.utils.serializePropertyOnObject = function(name, obj, out) {
-  if (name in obj) {
+  if ((obj[name] !== null) && (obj[name] !== undefined)) {
     out.push(',');
     out.push('"' + name + '":');
     this.serializeObjectToArray(obj[name], out);
