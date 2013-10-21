@@ -44,7 +44,7 @@ jstestdriver.plugins.createPausingRunTestLoop =
         var test = tests[i++];
         jstestdriver.log("running " + testCaseName + '.' + test);
         onTest(runTest(testCaseName, template, test));
-        if (now() - lastPause >= interval) {
+        if (i > 20 || (now() - lastPause) >= interval) {
           jstestdriver.log("pausing after " + testCaseName + '.' + test);
           lastPause = now();
           setTimeout(nextTest, 1);
