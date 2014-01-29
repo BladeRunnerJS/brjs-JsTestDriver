@@ -131,7 +131,7 @@ jstestdriver.plugins.TestRunnerPlugin.prototype.runTest =
     var res = jstestdriver.TestResult.RESULT.PASSED;
     try {
       // Adding calls to clear down our application's static state
-		if(typeof(br) != undefined)
+		if(typeof(br) != "undefined")
 		{
 			if(br.AliasRegistry && br.AliasRegistry.clear) {
 				br.AliasRegistry.clear();
