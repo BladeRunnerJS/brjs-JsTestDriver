@@ -131,15 +131,15 @@ jstestdriver.plugins.TestRunnerPlugin.prototype.runTest =
     var res = jstestdriver.TestResult.RESULT.PASSED;
     try {
       // Adding calls to clear down our application's static state
-      if(caplin && caplin.core)
-      {
-        if(caplin.core.AliasRegistry && caplin.core.AliasRegistry.clear) {
-          caplin.core.AliasRegistry.clear();
-        }
-        if(caplin.core.ServiceRegistry && caplin.core.ServiceRegistry.clear) {
-          caplin.core.ServiceRegistry.clear();
-        }
-      }
+		if(typeof(br) != undefined)
+		{
+			if(br.AliasRegistry && br.AliasRegistry.clear) {
+				br.AliasRegistry.clear();
+			}
+			if(br.ServiceRegistry && br.ServiceRegistry.clear) {
+				br.ServiceRegistry.clear();
+			}
+		}
 
       if (testCaseInstance.setUp) {
         testCaseInstance.setUp();
