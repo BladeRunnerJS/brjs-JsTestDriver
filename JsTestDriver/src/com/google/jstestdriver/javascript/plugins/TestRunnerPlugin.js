@@ -107,9 +107,34 @@ jstestdriver.plugins.TestRunnerPlugin.prototype.runTestConfiguration =
                     onTestRunConfigurationComplete)
 };
 
+jstestdriver.plugins.TestRunnerPlugin.prototype._invokeRegistryClearFunctions = function() {
+  // Adding calls to clear down our application's static state
+  var registries = [];
+  if (typeof(br) !== "undefined") {
+    registries.push(br.AliasRegistry);
+    registries.push(br.ServiceRegistry);
+  }
+  else {
+    try {
+      registries.push(require('br/AliasRegistry'));
+      registries.push(require('br/ServiceRegistry'));
+    } catch (e) {
+      // This exception is probably caused because the project
+      // doesn't require the alias or service registry, so brjs
+      // didn't bundle it.
+    }
+  }
 
-jstestdriver.plugins.TestRunnerPlugin.prototype.runTest =
-    function(testCaseName, testCase, testName) {
+  registries.forEach(
+    function(registry) {
+      if (registry && typeof registry.clear === 'function') {
+        registry.clear();
+      }
+    }
+  );
+};
+
+jstestdriver.plugins.TestRunnerPlugin.prototype.runTest = function(testCaseName, testCase, testName) {
   var testCaseInstance;
   var errors = [];
   try {
@@ -129,18 +154,9 @@ jstestdriver.plugins.TestRunnerPlugin.prototype.runTest =
     jstestdriver.expectedAssertCount = -1;
     jstestdriver.assertCount = 0;
     var res = jstestdriver.TestResult.RESULT.PASSED;
-    try {
-      // Adding calls to clear down our application's static state
-		if(typeof(br) != "undefined")
-		{
-			if(br.AliasRegistry && br.AliasRegistry.clear) {
-				br.AliasRegistry.clear();
-			}
-			if(br.ServiceRegistry && br.ServiceRegistry.clear) {
-				br.ServiceRegistry.clear();
-			}
-		}
 
+    try {
+      this._invokeRegistryClearFunctions();
       if (testCaseInstance.setUp) {
         testCaseInstance.setUp();
       }
